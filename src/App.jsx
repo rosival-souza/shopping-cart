@@ -3,8 +3,8 @@ import utils from './utils'
 import Rodal from 'rodal'
 import { faShoppingCart, faSearch, faStar, faTimes, faMinusCircle, faPlusCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import logo from './img/logo.jpg'
-import imgBook from './img/proc01.jpg'
+import logo from './img/logo.png'
+import Loader from 'react-loader-spinner'
 import './App.css'
 import 'rodal/lib/rodal.css'
 
@@ -14,39 +14,39 @@ export default function App() {
   const [modalCart, setModalCart] = useState(false)
   const [dataCart, setDataCart] = useState([])
   const [showPopover, setShowPopover] = useState(false)
-  const [data] = useState([
+  const [data, setData] = useState([
     {
-      _id: 1,
+      id: 1,
       title: '1 - Livro Direito Processual',
       amount: 1,
       price: 139.50
     },
     {
-      _id: 2,
+      id: 2,
       title: '2 - Livro Direito Processual',
       amount: 1,
       price: 123.30
     },
     {
-      _id: 3,
+      id: 3,
       title: '3 - Livro Direito Processual',
       amount: 1,
       price: 85.43
     },
     {
-      _id: 4,
+      id: 4,
       title: '4 - Livro Direito Processual',
       amount: 1,
       price: 100
     },
     {
-      _id: 5,
+      id: 5,
       title: '5 - Livro Direito Processual',
       amount: 1,
       price: 209.87
     },
     {
-      _id: 6,
+      id: 6,
       title: '6 - Livro Direito Processual',
       amount: 1,
       price: 859.87
@@ -56,6 +56,7 @@ export default function App() {
   const [totalBuy, setTotalBuy] = useState(0)
   const [auxCart, setAuxCart] = useState([])
   const [loader, setLoader] = useState(false)
+  const GRAPHQL_ENDPOINT = 'http://127.0.0.1:4000/api'
 
   const consumerAPI = async (graphqlEndpoint, query, variables = {}) => {
     setLoader(true)
@@ -69,27 +70,27 @@ export default function App() {
   }
   const addCart = () => {
 
-    if (!auxCart.includes(dataDetail._id)) {
-      setAuxCart([...auxCart, dataDetail._id])
+    if (!auxCart.includes(dataDetail.id)) {
+      setAuxCart([...auxCart, dataDetail.id])
       setDataCart(dataCart => [...dataCart, dataDetail])
     }
     setModalDetail(false)
     setShowPopover(true)
 
   }
-  const toggleAmount = (_id, isIncrement) => {
+  const toggleAmount = (id, isIncrement) => {
 
     setDataCart((prevDataCart) =>
       prevDataCart.map((item) => {
-        return item._id === _id ? { ...item, amount: isIncrement ? item.amount + 1 : item.amount === 1 ? item.amount : item.amount - 1 } : item
+        return item.id === id ? { ...item, amount: isIncrement ? item.amount + 1 : item.amount === 1 ? item.amount : item.amount - 1 } : item
       })
     )
 
   }
-  const removeItem = (_id) => {
+  const removeItem = (id) => {
 
-    setDataCart(dataCart.filter(item => item._id !== _id))
-    setAuxCart(auxCart.filter(item => item !== _id))
+    setDataCart(dataCart.filter(item => item.id !== id))
+    setAuxCart(auxCart.filter(item => item !== id))
 
   }
   useEffect(() => {
@@ -105,23 +106,24 @@ export default function App() {
 
   useEffect(() => {
 
-    const GRAPHQL_ENDPOINT = 'http://127.0.0.1:4000/api'
     const consultQuery = `  
       query {
         getProducts{
+          id
           photo
           title
           price
           reference
           amount
+          available
         }
       }
     `
-
     consumerAPI(GRAPHQL_ENDPOINT, consultQuery).then((res) => {
       console.log(res)
+      setData(res.data.getProducts)
       setLoader(false)
-    }).catch((error)=>{
+    }).catch((error) => {
       console.log('error consumer API =>', error)
       setLoader(false)
     })
@@ -141,13 +143,14 @@ export default function App() {
           <div className="badge">{dataCart.length}</div>
         </div>
         <div className="popover" style={{ display: showPopover ? 'inline' : 'none' }} >
+        <div className="close" onClick={()=> setShowPopover(false)}>< FontAwesomeIcon icon={faTimes} size="sm" /></div>
           {
             dataCart.map((row, idx) =>
               <div key={idx}>
                 <div className="detal-popover">
-                  <div><img alt="product" src={imgBook} style={{ width: '40px' }} /></div>
-                  <div>{row.title}</div>
-                  <div>{utils.formatMoneyBRL(row.price)}</div>
+                  <div><img alt="product" src={`data:image/jpeg;base64,${row.photo}`}  style={{ width: '40px' }} /></div>
+                  <div>{row.title}-</div>
+                  <div className="bold">R$ {utils.formatMoneyBRL(row.price)}</div>
                 </div>
               </div>
             )
@@ -160,13 +163,22 @@ export default function App() {
       {
         loader
           ?
-          <div className="loader">Loader...</div>
+          <div className="loader">
+            <Loader
+              color="#1ab2ff"
+              height={60}
+              width={60}
+              type="Watch"
+              className="pulse-yellow"
+            />
+            Carregando conteúdo...
+          </div>
           :
           <div className="container">
             {
               data.map((row, idx) =>
                 <div key={idx} className="products" onClick={() => { setDataDetal(row); setModalDetail(true) }}>
-                  <div className="photo"><img alt="product" src={imgBook} style={{ width: '150px' }} /></div>
+                  <div className="photo"><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '150px' }} /></div>
                   <div className="description">
                     {row.title}
                   </div>
@@ -191,16 +203,16 @@ export default function App() {
       {/* detail products */}
       <Rodal visible={modalDetail} onClose={() => { setModalDetail(false) }}>
         <div className="modal-body">
-          <div className="left"><img alt="product" src={imgBook} style={{ width: '200px' }} /></div>
+          <div className="left"><img alt="product" src={`data:image/jpeg;base64,${dataDetail.photo}`}  style={{ width: '200px' }} /></div>
           <div className="right">
             <div className="detal-modal medium">
               {dataDetail.title}
             </div>
             <div className="detal-modal small">
-              Ref.: AD6-0222-014-02
+              Ref: {dataDetail.reference}
             </div>
             <div className="detal-modal bold">
-              {utils.formatMoneyBRL(dataDetail.price)}
+              R$ {utils.formatMoneyBRL(dataDetail.price)}
             </div>
             <div className="detal-modal bold">
               <div onClick={() => addCart()} className="buy white">ADICIONAR A SACOLA &nbsp;<FontAwesomeIcon icon={faShoppingCart} /></div>
@@ -219,20 +231,23 @@ export default function App() {
                 <tr>
                   <th></th>
                   <th>Qtd</th>
+                  <th>Disponível</th>
                   <th>Descrição</th>
                   <th>Valor</th>
                   <th>Remover</th>
                 </tr>
                 {
-                  dataCart.map((row, idx) =>
+                  dataCart.length > 0 && dataCart.map((row, idx) =>
                     <tr key={idx} >
-                      <td><img alt="product" src={imgBook} style={{ width: '40px' }} /></td>
+                      <td><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '40px' }} /></td>
                       <td>
-                        <FontAwesomeIcon onClick={() => toggleAmount(row._id, false)} icon={faMinusCircle} color="#ccc" size="lg" />&nbsp;&nbsp;{row.amount}
-                        &nbsp;&nbsp;<FontAwesomeIcon onClick={() => toggleAmount(row._id, true)} size="lg" icon={faPlusCircle} color="#ccc" /></td>
+                        <FontAwesomeIcon onClick={() => toggleAmount(row.id, false)} icon={faMinusCircle} color="#ccc" size="lg" />&nbsp;&nbsp;{row.amount}
+                        &nbsp;&nbsp;
+                        <FontAwesomeIcon onClick={() => toggleAmount(row.id, true)} size="lg" icon={faPlusCircle} color="#ccc" /></td>
+                      <td>{row.available - row.amount}</td>
                       <td>{row.title}</td>
                       <td>R$ {utils.formatMoneyBRL(row.price * row.amount)}</td>
-                      <td onClick={() => removeItem(row._id)}><FontAwesomeIcon icon={faTimes} color="red" size="lg" /></td>
+                      <td onClick={() => removeItem(row.id)}><FontAwesomeIcon icon={faTimes} color="red" size="lg" /></td>
                     </tr>
                   )
                 }
@@ -246,7 +261,7 @@ export default function App() {
           </div>
         </div>
       </Rodal>
-      <footer><img alt="logo" src={logo} style={{ width: '70px' }} /> Shopping Cart - @Rosival de Souza</footer>
+      <footer><img alt="logo" src={logo} style={{ width: '70px' }} />Shopping Cart - @Rosival_Souza</footer>
     </div>
   )
 }

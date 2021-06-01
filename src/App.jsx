@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import utils from './utils'
 import Rodal from 'rodal'
-import { faShoppingCart, faSearch, faStar, faTimes, faMinusCircle, faPlusCircle } from "@fortawesome/free-solid-svg-icons"
+import { faShoppingCart, faSearch, faStar, faTimes, faMinusCircle, faPlusCircle, faCreditCard } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import logo from './img/logo.png'
 import Loader from 'react-loader-spinner'
@@ -12,50 +12,16 @@ export default function App() {
 
   const [modalDetail, setModalDetail] = useState(false)
   const [modalCart, setModalCart] = useState(false)
+  const [modalCheckout, setModalCheckout] = useState(false)
   const [dataCart, setDataCart] = useState([])
   const [showPopover, setShowPopover] = useState(false)
-  const [data, setData] = useState([
-    {
-      id: 1,
-      title: '1 - Livro Direito Processual',
-      amount: 1,
-      price: 139.50
-    },
-    {
-      id: 2,
-      title: '2 - Livro Direito Processual',
-      amount: 1,
-      price: 123.30
-    },
-    {
-      id: 3,
-      title: '3 - Livro Direito Processual',
-      amount: 1,
-      price: 85.43
-    },
-    {
-      id: 4,
-      title: '4 - Livro Direito Processual',
-      amount: 1,
-      price: 100
-    },
-    {
-      id: 5,
-      title: '5 - Livro Direito Processual',
-      amount: 1,
-      price: 209.87
-    },
-    {
-      id: 6,
-      title: '6 - Livro Direito Processual',
-      amount: 1,
-      price: 859.87
-    },
-  ])
+  const [data, setData] = useState([])
   const [dataDetail, setDataDetal] = useState([])
   const [totalBuy, setTotalBuy] = useState(0)
   const [auxCart, setAuxCart] = useState([])
   const [loader, setLoader] = useState(false)
+  const [loaderBuy, setLoaderBuy] = useState(false)
+  const [isError, setIsError] = useState(false)
   const GRAPHQL_ENDPOINT = 'http://127.0.0.1:4000/api'
 
   const consumerAPI = async (graphqlEndpoint, query, variables = {}) => {
@@ -93,19 +59,54 @@ export default function App() {
     setAuxCart(auxCart.filter(item => item !== id))
 
   }
+  const finalizePurchase = () => {
+  
+    setLoaderBuy(true)
+    
+    const multationQuery = `
+        mutation{
+          createSales(input:{
+          title: "product Two"
+          price: 193.45
+          reference: "reference Two"
+          amount: 1
+          available: 21
+          id_product: 2
+        }){
+          id
+          title
+          }
+        }
+    `
+    consumerAPI(GRAPHQL_ENDPOINT, multationQuery).then((res) => {
+
+      console.log(res)
+      setLoaderBuy(false)
+      setLoader(false)
+
+    }).catch((error) => {
+      console.log('error multationQuery API =>', error)
+      setLoaderBuy(false)
+      setLoader(false)
+    })
+    
+    setModalCheckout(false)
+    console.log('finalizePurchase', dataCart)
+
+  }
+
   useEffect(() => {
 
     let total = dataCart.reduce((prev, current) => {
-      return prev + current.price
+      return prev + current.price * current.amount
     }, 0)
 
     setTotalBuy(total)
-    // console.log(`dataCart => `,dataCart)
 
   }, [dataCart, dataDetail])
 
   useEffect(() => {
-
+    setIsError(false)
     const consultQuery = `  
       query {
         getProducts{
@@ -125,11 +126,15 @@ export default function App() {
       setLoader(false)
     }).catch((error) => {
       console.log('error consumer API =>', error)
+      setIsError(true)
       setLoader(false)
     })
 
-
   }, [])
+
+  useEffect(()=>{
+    console.log('change loader', loader)
+  },[loader])
 
   return (
     <div className="app">
@@ -143,21 +148,28 @@ export default function App() {
           <div className="badge">{dataCart.length}</div>
         </div>
         <div className="popover" style={{ display: showPopover ? 'inline' : 'none' }} >
-        <div className="close" onClick={()=> setShowPopover(false)}>< FontAwesomeIcon icon={faTimes} size="sm" /></div>
+          <div className="close" onClick={() => setShowPopover(false)}>< FontAwesomeIcon icon={faTimes} size="sm" /></div>
           {
-            dataCart.map((row, idx) =>
-              <div key={idx}>
-                <div className="detal-popover">
-                  <div><img alt="product" src={`data:image/jpeg;base64,${row.photo}`}  style={{ width: '40px' }} /></div>
-                  <div>{row.title}-</div>
-                  <div className="bold">R$ {utils.formatMoneyBRL(row.price)}</div>
-                </div>
-              </div>
-            )
+
+            <table className="detail">
+              <tbody>
+                {
+                  dataCart.map((row, idx) =>
+                    <tr key={idx} >
+                      <td><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '40px' }} /></td>
+                      <td>( {row.amount} )</td>
+                      <td>{row.title}</td>
+                      <td className="bold">R$ {utils.formatMoneyBRL(row.price * row.amount)}</td>
+                    </tr>
+                  )
+                }
+              </tbody>
+            </table>
           }
+          <hr />
           <div className="title">Subtotal: R$ {utils.formatMoneyBRL(totalBuy)}</div>
           <br />
-          <div onClick={() => { setShowPopover(false); setModalCart(true) }} className="buy white">FINALIZAR COMPRA</div>
+          <div onClick={() => { setShowPopover(false); setModalCart(true) }} className="buy white">CONTINUAR</div>
         </div>
       </header>
       {
@@ -174,42 +186,58 @@ export default function App() {
             Carregando conteúdo...
           </div>
           :
-          <div className="container">
-            {
-              data.map((row, idx) =>
-                <div key={idx} className="products" onClick={() => { setDataDetal(row); setModalDetail(true) }}>
-                  <div className="photo"><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '150px' }} /></div>
-                  <div className="description">
-                    {row.title}
+          isError
+            ?
+            <div className="loader">
+              <div className="error">Erro...</div>
+              <div>Verifique sua API de comunicação...</div>
+            </div>
+            :
+            <div className="container">
+              {
+                data.map((row, idx) =>
+                  <div key={idx} className="products" onClick={() => { setDataDetal(row); setModalDetail(true) }}>
+                    <div className="photo"><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '150px' }} /></div>
+                    <div className="description">
+                      {row.title}
+                    </div>
+                    <div className="description">
+                      <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+                      <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+                      <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+                      <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+                      <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+                    </div>
+                    <div className="description bold">
+                      R$ {utils.formatMoneyBRL(row.price)}
+                    </div>
+                    <div onClick={() => { setDataDetal(row); setModalDetail(true) }} className="buy white">DETALHES &nbsp;<FontAwesomeIcon icon={faSearch} rotation={90} /></div>
                   </div>
-                  <div className="description bold">
-                    <FontAwesomeIcon icon={faStar} color="#ffd11a" />
-                    <FontAwesomeIcon icon={faStar} color="#ffd11a" />
-                    <FontAwesomeIcon icon={faStar} color="#ffd11a" />
-                    <FontAwesomeIcon icon={faStar} color="#ffd11a" />
-                    <FontAwesomeIcon icon={faStar} color="#ffd11a" />
-                  </div>
-                  <div className="description bold">
-                    R$ {utils.formatMoneyBRL(row.price)}
-                  </div>
-                  <div onClick={() => { setDataDetal(row); setModalDetail(true) }} className="buy white">DETALHES &nbsp;<FontAwesomeIcon icon={faSearch} rotation={90} /></div>
-                </div>
-              )
-            }
-          </div>
+                )
+              }
+            </div>
 
       }
 
       {/* detail products */}
       <Rodal visible={modalDetail} onClose={() => { setModalDetail(false) }}>
         <div className="modal-body">
-          <div className="left"><img alt="product" src={`data:image/jpeg;base64,${dataDetail.photo}`}  style={{ width: '200px' }} /></div>
+          <div className="left"><img alt="product" src={`data:image/jpeg;base64,${dataDetail.photo}`} style={{ width: '200px' }} /></div>
           <div className="right">
             <div className="detal-modal medium">
               {dataDetail.title}
             </div>
+
+            <hr />
             <div className="detal-modal small">
-              Ref: {dataDetail.reference}
+              <span className="bold">Ref: </span>&nbsp; {dataDetail.reference}
+            </div>
+            <div className="detal-modal small">
+              <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+              <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+              <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+              <FontAwesomeIcon icon={faStar} color="#ffd11a" />
+              <FontAwesomeIcon icon={faStar} color="#ffd11a" />
             </div>
             <div className="detal-modal bold">
               R$ {utils.formatMoneyBRL(dataDetail.price)}
@@ -226,6 +254,7 @@ export default function App() {
         <div className="modal-body">
           <div className="myCart">
             <span className="title">Meu Carrinho</span>
+            <hr />
             <table>
               <tbody>
                 <tr>
@@ -246,7 +275,7 @@ export default function App() {
                         <FontAwesomeIcon onClick={() => toggleAmount(row.id, true)} size="lg" icon={faPlusCircle} color="#ccc" /></td>
                       <td>{row.available - row.amount}</td>
                       <td>{row.title}</td>
-                      <td>R$ {utils.formatMoneyBRL(row.price * row.amount)}</td>
+                      <td className="bold">R$ {utils.formatMoneyBRL(row.price * row.amount)}</td>
                       <td onClick={() => removeItem(row.id)}><FontAwesomeIcon icon={faTimes} color="red" size="lg" /></td>
                     </tr>
                   )
@@ -257,7 +286,56 @@ export default function App() {
 
           </div>
           <div className="resumeCart">
-            <span className="title">Resumo da compra</span>
+            <div className="items title">Resumo da compra</div>
+            <hr />
+            <div className="items" >SubTotal ({dataCart.length})</div>
+            <hr />
+            <div className="items title">Valor Total: R$ {utils.formatMoneyBRL(totalBuy)}</div>
+            <hr />
+            <div onClick={() => { setShowPopover(false); setModalCheckout(true); setModalCart(false) }} className="buy white">FINALIZAR COMPRA</div>
+          </div>
+        </div>
+      </Rodal>
+
+      {/* detail checkout */}
+      <Rodal visible={modalCheckout} onClose={() => { setModalCheckout(false) }}>
+        <div className="modal-body">
+          <div className="checkout-left">
+            <span className="title">Formas de Pagamento</span>
+            <hr />
+            <div className="items-checkout" ><FontAwesomeIcon icon={faCreditCard} color="#666" />&nbsp; Cartão de Crédito</div>
+            <div className="items-checkout input" ><input type="number" placeholder="Número do cartão" /></div>
+            <div className="items-checkout input" ><input type="text" placeholder="Nome impresso no cartão" /></div>
+            <div className="items-checkout input" >
+              <input type="text" placeholder="Validade do cartão" />
+            </div>
+            <div className="items-checkout input" >
+              <input type="number" placeholder="CVV" maxLength="3" />
+            </div>
+          </div>
+          <div className="checkout-right">
+            <div className="items title">Resumo do Pedido</div>
+            <hr />
+            <div className="items" >SubTotal ({dataCart.length})</div>
+            <hr />
+            <div className="items title">Valor Total: R$ {utils.formatMoneyBRL(totalBuy)}</div>
+            <hr />
+            <div 
+
+            onClick={() => loaderBuy ? console.log('process...') : finalizePurchase()} 
+            className="buy white">
+              {
+                loaderBuy
+                  ?
+                  'PROCESSANDO...'
+                  :
+                  'FINALIZAR PEDIDO'
+              }
+
+            </div>
+            <hr />
+            <div onClick={() => { setShowPopover(false); setModalCheckout(false); setModalCart(true) }} className="buy-edit">EDITAR PEDIDOS</div>
+
           </div>
         </div>
       </Rodal>

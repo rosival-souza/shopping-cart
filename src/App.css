@@ -27,6 +27,7 @@ header {
   height: 100px;
   width: 100%;
   background: #fff;
+  z-index: 1;
   box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.2);
 }
 .logo {
@@ -38,7 +39,7 @@ header {
   padding: 10px;
   /* border: 1px dashed #ddd; */
 }
-.cart{
+.cart {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,7 +48,7 @@ header {
   /* border: 1px dashed #ddd; */
   cursor: pointer;
 }
-.badge{
+.badge {
   position: relative;
   border: 0px solid #ccc;
   margin-left: -20%;
@@ -59,7 +60,7 @@ header {
   font-weight: 500;
   background: rgb(39, 189, 34);
 }
-.close{
+.close {
   /* border: 1px dashed #ccc; */
   display: flex;
   width: 100%;
@@ -67,7 +68,7 @@ header {
   padding: 2% 1%;
   cursor: pointer;
 }
-.popover{
+.popover {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -83,7 +84,7 @@ header {
   box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2);
   z-index: 1;
 }
-.detal-popover{
+.detal-popover {
   border-bottom: 1px solid #ccc;
   width: 100%;
   /* height: 15%; */
@@ -96,16 +97,16 @@ header {
 
   align-items: center;
 }
-.loader{
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    align-items: center;
-    /* border: 2px dashed #ccc; */
-    background: #fff;
-    width: 50%;
-    font-size: 1.0vw;
-    height: 70vh;
+.loader {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  /* border: 2px dashed #ccc; */
+  background: #fff;
+  width: 50%;
+  font-size: 1vw;
+  height: 70vh;
 }
 .container {
   display: flex;
@@ -116,9 +117,8 @@ header {
   margin: 10px 10px;
   flex-wrap: wrap;
   justify-content: space-between;
-  
+
   background: #fff;
-  
 }
 
 .products {
@@ -133,12 +133,12 @@ header {
   padding: 10px;
   font-size: 0.8em;
 }
-.products:hover{
+.products:hover {
   /* border-color: ; */
   border: 1px solid rgb(22, 166, 223);
   cursor: pointer;
 }
-.photo{
+.photo {
   /* border: 1px dashed #ccc; */
   width: 92%;
   height: 100%;
@@ -147,7 +147,7 @@ header {
   justify-content: center;
   background: rgb(238, 238, 238);
 }
-.description{
+.description {
   /* border: 1px dashed #ccc; */
   width: 100%;
   height: 15%;
@@ -157,29 +157,47 @@ header {
 
   align-items: center;
 }
-.bold{
+.error {
+  color: red;
   font-weight: 500;
 }
-.buy{
+.bold {
+  font-weight: 500;
+}
+.buy {
   display: flex;
   justify-content: center;
   align-items: center;
   /* border: 1px dashed #ccc; */
   width: 100%;
-  height: 60PX;
+  height: 60px;
   font-size: 0.8em;
   cursor: pointer;
   background: rgba(0, 0, 0, 0.8);
-  color: #FFF;
-
+  color: #fff;
 }
-.buy:hover{
+.buy:hover {
   background: rgba(0, 0, 0, 0.95);
 }
-.white{
-  color: #FFF;
+.buy-edit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #000;
+  width: 100%;
+  height: 60px;
+  font-size: 0.8em;
+  cursor: pointer;
+  color: #000;
 }
-.small{
+.buy-edit:hover {
+  border: 2px solid #666;
+  color:#666;
+}
+.white {
+  color: #fff;
+}
+.small {
   font-size: 0.7em;
 }
 footer {
@@ -192,19 +210,19 @@ footer {
   color: #ddd;
   background: rgba(0, 0, 0, 0.8);
 }
-.rodal-dialog{
+.rodal-dialog {
   width: 55% !important;
   height: 60% !important;
 }
-.modal-body{
+.modal-body {
   display: flex;
   /* border: 2px dashed #ddd; */
   margin-top: 30px;
   height: 90%;
 }
-.left{
+.left {
   display: flex;
-  align-items:center;
+  align-items: center;
   justify-content: center;
   /* border: 2px dashed #ddd; */
   width: 50%;
@@ -212,7 +230,7 @@ footer {
   /* height: 100%; */
   /* width: 100px; */
 }
-.right{
+.right {
   display: flex;
   flex-direction: column;
   /* align-items:center; */
@@ -221,7 +239,7 @@ footer {
   /* height: 100%; */
   /* width: 100px; */
 }
-.detal-modal{
+.detal-modal {
   /* border: 1px dashed #ccc; */
   width: 100%;
   height: 8%;
@@ -230,36 +248,100 @@ footer {
   /* justify-content: center; */
   align-items: center;
 }
-.title{
+.title {
   font-size: 0.8em;
   font-weight: 500;
 }
-.myCart{
+.myCart {
   display: flex;
   flex-direction: column;
   padding: 10px;
-  border: 1px dashed #ddd;
+  /* border: 1px dashed #ddd; */
   width: 70%;
   overflow: auto;
   /* background: rgb(243, 243, 243); */
 }
-.resumeCart{
+.resumeCart {
   display: flex;
   flex-direction: column;
   padding: 10px;
-  border: 1px dashed #ddd;
+  border-left: 2px solid #ddd;
   width: 30%;
 }
-table,th,tr, td{
+.checkout-left {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  /* border: 1px dashed #ddd; */
+  width: 60%;
+  overflow: auto;
+  /* background: rgb(243, 243, 243); */
+}
+.checkout-right {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-left: 2px solid #ddd;
+  width: 40%;
+}
+.items-checkout {
+  /* border: 1px dashed #ddd; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5%;
+}
+input[type="text"], input[type="number"]{
+  width: 100%;
+  height: 40px;
+  font-size: 0.7em;
+  display: block;
+  border: none;
+  outline: none;
+  background: transparent !important;
+}
+.input {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  border-bottom: 2px solid #ccc;
+}
+hr {
+  width: 100%;
+  border: 0.5px solid #ddd;
+}
+.items {
+  /* border: 1px dashed #ddd; */
+  font-size: 0.8em;
+}
+table,
+th,
+tr,
+td {
   border: 1px solid #ddd;
   border-spacing: 0;
   border-collapse: collapse;
   text-align: center;
 }
-th, td{
+table.detail td {
+  border: 0px solid #ddd;
+  text-align: left;
+  font-size: 0.6em;
+}
+table.detail tr {
+  border: 0px solid #ddd;
+  text-align: left;
+}
+table.detail {
+  width: 100%;
+  border: 0px solid #ddd;
+  text-align: left;
+}
+th,
+td {
   font-size: 0.7em;
 }
-td{
+td {
   cursor: pointer;
 }
 /* Largura da barra de rolagem */
@@ -271,19 +353,19 @@ td{
 /* Fundo da barra de rolagem */
 ::-webkit-scrollbar-track-piece {
   background-color: #000;
-  border-left: 0px solid #CCC
+  border-left: 0px solid #ccc;
 }
 
 /* Cor do indicador de rolagem */
 ::-webkit-scrollbar-thumb:vertical,
 ::-webkit-scrollbar-thumb:horizontal {
   background-color: #ddd;
-  border-radius:5px;
+  border-radius: 5px;
   height: 06px;
 }
 
 /* Cor do indicador de rolagem - ao passar o mouse */
 ::-webkit-scrollbar-thumb:vertical:hover,
 ::-webkit-scrollbar-thumb:horizontal:hover {
-  background-color: #ccc
+  background-color: #ccc;
 }

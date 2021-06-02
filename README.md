@@ -6,6 +6,7 @@ Front-End Aplication test for Software Engineer in JusBrasil using ReactJS and J
 * It's necessary to have ReactJS installed on your machine
 * Open project root and execute first command: npm i
 * Execute second command: npm start
+* Open application in your browser http://127.0.0.1:3000
 
 
 1º - Application Preview 

@@ -24,6 +24,10 @@ export default function App() {
   const [loaderBuy, setLoaderBuy] = useState(false)
   const [isError, setIsError] = useState(false)
   const GRAPHQL_ENDPOINT = 'http://127.0.0.1:4000/api'
+  const creditCard = 1020304050607080
+  const [checkCreditCard, setCheckCreditCard] = useState(0)
+  const [isValidCard, setIsValidCard] = useState(false)
+
 
   const consumerAPI = async (graphqlEndpoint, query, variables = {}) => {
     setLoader(true)
@@ -53,6 +57,7 @@ export default function App() {
         return item.id === id ? { ...item, amount: isIncrement ? item.amount + 1 : item.amount === 1 ? item.amount : item.amount - 1 } : item
       })
     )
+    setLoader(false)
 
   }
   const removeItem = (id) => {
@@ -64,8 +69,11 @@ export default function App() {
   const finalizePurchase = async () => {
 
     setLoaderBuy(true)
+    let check = await checkStock(dataCart[0].id)
 
-    const multationQuery = `
+    if (check) {
+
+      const multationQuery = `
       mutation{
         createSales(input: ${utils.queryfy(dataCart)}){
           title
@@ -77,23 +85,53 @@ export default function App() {
         }
       }
     `
-    consumerAPI(GRAPHQL_ENDPOINT, multationQuery).then((res) => {
+      consumerAPI(GRAPHQL_ENDPOINT, multationQuery).then((res) => {
 
-      console.log(res)
-      setLoaderBuy(false)
-      setLoader(false)
-      setDataCart([])
-      setModalFinal(true)
+        console.log(res)
+        setLoaderBuy(false)
+        setLoader(false)
+        setDataCart([])
+        setModalFinal(true)
 
-    }).catch((error) => {
-      console.log('error multationQuery API =>', error)
-      setLoaderBuy(false)
-      setLoader(false)
-    })
+      }).catch((error) => {
+        console.log('error multationQuery API =>', error)
+        setLoaderBuy(false)
+        setLoader(false)
+      })
 
-    setModalCheckout(false)
-    console.log('finalizePurchase', dataCart)
+      setModalCheckout(false)
+      console.log('finalizePurchase', dataCart)
 
+
+    }else{
+      console.log('no stock...')
+    }
+
+
+  }
+
+  const checkStock = async (idProduct) => {
+
+    console.log('checkStock...', idProduct)
+
+    // const consultProduct = `  
+    //   query {
+    //     getProduct(id: ${idProduct}){
+    //       id
+    //       title
+    //       amount
+    //       price
+    //       available
+    //     }
+    //   }
+    // `
+    // consumerAPI(GRAPHQL_ENDPOINT, consultProduct).then((res) => {
+    //   console.log(res.data.getProduct.available)
+    // }).catch((error) => {
+    //   console.log('toggleAmount =>', error)
+    // })
+
+    return true
   }
 
   useEffect(() => {
@@ -104,11 +142,13 @@ export default function App() {
 
     setTotalBuy(total)
 
-  }, [dataCart, dataDetail])
+  }, [dataCart])
 
   useEffect(() => {
+
     setIsError(false)
-    const consultQuery = `  
+
+    let consultQuery = `  
       query {
         getProducts{
           id
@@ -136,8 +176,17 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    console.log('change loader', loader)
-  }, [loader])
+
+    if (checkCreditCard === creditCard) {
+      console.log('checkCreditCard:', checkCreditCard, isValidCard)
+      setIsValidCard(true)
+    } else {
+      setIsValidCard(false)
+
+      console.log('checkCreditCard:', checkCreditCard, isValidCard)
+    }
+
+  }, [checkCreditCard, isValidCard])
 
   return (
     <div className="app">
@@ -270,12 +319,20 @@ export default function App() {
                 </tr>
                 {
                   dataCart.length > 0 && dataCart.map((row, idx) =>
+
                     <tr key={idx} >
                       <td><img alt="product" src={`data:image/jpeg;base64,${row.photo}`} style={{ width: '40px' }} /></td>
                       <td>
                         <FontAwesomeIcon onClick={() => toggleAmount(row.id, false)} icon={faMinusCircle} color="#ccc" size="lg" />&nbsp;&nbsp;{row.amount}
                         &nbsp;&nbsp;
-                        <FontAwesomeIcon onClick={() => toggleAmount(row.id, true)} size="lg" icon={faPlusCircle} color="#ccc" /></td>
+                        {
+                          row.amount >= row.available
+                            ?
+                            <FontAwesomeIcon size="lg" icon={faPlusCircle} color="#ccc" />
+                            :
+                            <FontAwesomeIcon onClick={() => toggleAmount(row.id, true)} size="lg" icon={faPlusCircle} color="#ccc" />
+                        }
+                      </td>
                       <td>{row.available - row.amount}</td>
                       <td>{row.title}</td>
                       <td className="bold">R$ {utils.formatMoneyBRL(row.price * row.amount)}</td>
@@ -307,13 +364,27 @@ export default function App() {
             <span className="title">Formas de Pagamento</span>
             <hr />
             <div className="items-checkout" ><FontAwesomeIcon icon={faCreditCard} color="#666" />&nbsp; Cartão de Crédito</div>
-            <div className="items-checkout input" ><input type="number" placeholder="Número do cartão" /></div>
+            <div className="items-checkout small" >Nº de Cartão válido para compra: [{creditCard}]</div>
+            <div className="items-checkout input" ><input onChange={(e) => setCheckCreditCard(parseInt(e.target.value))} type="number" placeholder="Número do cartão" /></div>
             <div className="items-checkout input" ><input type="text" placeholder="Nome impresso no cartão" /></div>
             <div className="items-checkout input" >
               <input type="text" placeholder="Validade do cartão" />
             </div>
             <div className="items-checkout input" >
               <input type="number" placeholder="CVV" maxLength="3" />
+            </div>
+            <div className="items-checkout small" >
+              {
+                isValidCard && checkCreditCard > 0
+                  ?
+                  'Cartão válido'
+                  :
+                  checkCreditCard > 0
+                    ?
+                    'Cartão inválido'
+                    :
+                    ''
+              }
             </div>
           </div>
           <div className="checkout-right">
@@ -323,16 +394,21 @@ export default function App() {
             <hr />
             <div className="items title">Valor Total: R$ {utils.formatMoneyBRL(totalBuy)}</div>
             <hr />
+
             <div
 
-              onClick={() => loaderBuy ? console.log('process...') : finalizePurchase()}
+              onClick={() => loaderBuy ? console.log('process...') : isValidCard ? finalizePurchase() : console.log('Invalid credit card....')}
               className="buy white">
               {
                 loaderBuy
                   ?
                   'PROCESSANDO...'
                   :
-                  'FINALIZAR PEDIDO'
+                  isValidCard
+                    ?
+                    'FINALIZAR PEDIDO'
+                    :
+                    'PREENCHA O CARTÃO DE CRÉDITO'
               }
 
             </div>
@@ -346,11 +422,11 @@ export default function App() {
       {/* modal final */}
       <Rodal visible={modalFinal} onClose={() => { setModalFinal(false) }}>
         <div className="modal-body">
-            <div className="modal-final">
+          <div className="modal-final">
             <div><FontAwesomeIcon icon={faCheckCircle} color="rgb(10, 172, 51)" size="3x" /></div>
             <div>&nbsp;</div>
             <div>Venda concluída com sucesso!</div>
-            </div>
+          </div>
         </div>
       </Rodal>
       <footer><img alt="logo" src={logo} style={{ width: '70px' }} />Shopping Cart - @Rosival_Souza</footer>

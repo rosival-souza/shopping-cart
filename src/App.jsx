@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import utils from './utils'
 import Rodal from 'rodal'
-import { faShoppingCart, faSearch, faStar, faTimes, faMinusCircle, faPlusCircle, faCreditCard } from "@fortawesome/free-solid-svg-icons"
+import { faShoppingCart, faSearch, faStar, faTimes, faMinusCircle, faPlusCircle, faCreditCard, faCheckCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import logo from './img/logo.png'
 import Loader from 'react-loader-spinner'
@@ -13,6 +13,7 @@ export default function App() {
   const [modalDetail, setModalDetail] = useState(false)
   const [modalCart, setModalCart] = useState(false)
   const [modalCheckout, setModalCheckout] = useState(false)
+  const [modalFinal, setModalFinal] = useState(false)
   const [dataCart, setDataCart] = useState([])
   const [showPopover, setShowPopover] = useState(false)
   const [data, setData] = useState([])
@@ -34,6 +35,7 @@ export default function App() {
 
     return response.json()
   }
+
   const addCart = () => {
 
     if (!auxCart.includes(dataDetail.id)) {
@@ -59,37 +61,36 @@ export default function App() {
     setAuxCart(auxCart.filter(item => item !== id))
 
   }
-  const finalizePurchase = () => {
-  
+  const finalizePurchase = async () => {
+
     setLoaderBuy(true)
-    
+
     const multationQuery = `
-        mutation{
-          createSales(input:{
-          title: "product Two"
-          price: 193.45
-          reference: "reference Two"
-          amount: 1
-          available: 21
-          id_product: 2
-        }){
-          id
+      mutation{
+        createSales(input: ${utils.queryfy(dataCart)}){
           title
-          }
+          price
+          reference
+          amount
+          available
+          photo
         }
+      }
     `
     consumerAPI(GRAPHQL_ENDPOINT, multationQuery).then((res) => {
 
       console.log(res)
       setLoaderBuy(false)
       setLoader(false)
+      setDataCart([])
+      setModalFinal(true)
 
     }).catch((error) => {
       console.log('error multationQuery API =>', error)
       setLoaderBuy(false)
       setLoader(false)
     })
-    
+
     setModalCheckout(false)
     console.log('finalizePurchase', dataCart)
 
@@ -121,8 +122,10 @@ export default function App() {
       }
     `
     consumerAPI(GRAPHQL_ENDPOINT, consultQuery).then((res) => {
+
       console.log(res)
-      setData(res.data.getProducts)
+
+      if (res.data.getProducts.length > 0) { setData(res.data.getProducts) }
       setLoader(false)
     }).catch((error) => {
       console.log('error consumer API =>', error)
@@ -132,9 +135,9 @@ export default function App() {
 
   }, [])
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log('change loader', loader)
-  },[loader])
+  }, [loader])
 
   return (
     <div className="app">
@@ -169,7 +172,7 @@ export default function App() {
           <hr />
           <div className="title">Subtotal: R$ {utils.formatMoneyBRL(totalBuy)}</div>
           <br />
-          <div onClick={() => { setShowPopover(false); setModalCart(true) }} className="buy white">CONTINUAR</div>
+          <div onClick={() => { setShowPopover(false); dataCart.length > 0 ? setModalCart(true) : setModalCart(false) }} className="buy white">CONTINUAR</div>
         </div>
       </header>
       {
@@ -320,10 +323,10 @@ export default function App() {
             <hr />
             <div className="items title">Valor Total: R$ {utils.formatMoneyBRL(totalBuy)}</div>
             <hr />
-            <div 
+            <div
 
-            onClick={() => loaderBuy ? console.log('process...') : finalizePurchase()} 
-            className="buy white">
+              onClick={() => loaderBuy ? console.log('process...') : finalizePurchase()}
+              className="buy white">
               {
                 loaderBuy
                   ?
@@ -337,6 +340,17 @@ export default function App() {
             <div onClick={() => { setShowPopover(false); setModalCheckout(false); setModalCart(true) }} className="buy-edit">EDITAR PEDIDOS</div>
 
           </div>
+        </div>
+      </Rodal>
+
+      {/* modal final */}
+      <Rodal visible={modalFinal} onClose={() => { setModalFinal(false) }}>
+        <div className="modal-body">
+            <div className="modal-final">
+            <div><FontAwesomeIcon icon={faCheckCircle} color="rgb(10, 172, 51)" size="3x" /></div>
+            <div>&nbsp;</div>
+            <div>Venda concluída com sucesso!</div>
+            </div>
         </div>
       </Rodal>
       <footer><img alt="logo" src={logo} style={{ width: '70px' }} />Shopping Cart - @Rosival_Souza</footer>
